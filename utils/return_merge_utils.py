@@ -18,4 +18,4 @@ def downsample(full_dataset):
     
     # Combine minority class with downsampled majority class
     df_downsampled = pd.concat([df_majority_downsampled, df_minority])
-    df_downsampled
+    return df_downsampled
