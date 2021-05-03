@@ -19,7 +19,9 @@ def pre_processing(numerical_columns,categorical_columns):
             ('cat', categorical_transformer, categorical_columns)])
     
 
-def make_model_pipeline(numerical_columns,categorical_columns):
+def make_model_pipeline(numerical_columns,categorical_columns,keepcols):
+    selector = ColumnTransformer([('selector','passthrough',keepcols)],remainder='drop')
     preprocessor = pre_processing(numerical_columns,categorical_columns)
-    model_pipeline = Pipeline(steps=[('pre_processing',preprocessor),('classifer',LogisticRegression())])
+    
+    model_pipeline = Pipeline(steps=[('selector',selector),('pre_processing',preprocessor),('classifer',LogisticRegression())])
     return model_pipeline
