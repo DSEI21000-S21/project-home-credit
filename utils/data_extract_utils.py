@@ -39,4 +39,5 @@ def extract_features_from_bureau(bureau_df, bureau_balances_df):
     
     # Further aggregation to make sure unique SK_ID_CURR are returned
     bureau_with_dpds = bureau_with_dpds.groupby(['SK_ID_CURR']).mean()
-    return bureau_with_dpds
+    
+    return bureau_with_dpds.fillna(value=0)
