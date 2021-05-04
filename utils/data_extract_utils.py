@@ -8,6 +8,8 @@ def extract_zip(content):
         for zipinfo in thezip.infolist():
             with thezip.open(zipinfo) as thefile:
                 yield zipinfo.filename, thefile
+
+EXTRACTRED_BUREAU_COLUMNS = ['AMT_CREDIT_DEBT_RATIO', 'CREDIT_DAY_OVERDUE', 'DPD_COUNTS']
                 
 def extract_features_from_bureau(bureau_df, bureau_balances_df):
     bureau_df['AMT_CREDIT_SUM_DEBT'] = bureau_df['AMT_CREDIT_SUM_DEBT'].fillna(value=0)
@@ -36,7 +38,7 @@ def extract_features_from_bureau(bureau_df, bureau_balances_df):
     dpd_counts_df = pd.DataFrame(dpd_counts_df, columns=['DPD_COUNTS']);
     bureau_with_dpds = pd.concat([bureau_df, dpd_counts_df], axis=1)
     
-    bureau_with_dpds = bureau_with_dpds[:][['SK_ID_CURR', 'AMT_CREDIT_DEBT_RATIO', 'CREDIT_DAY_OVERDUE', 'DPD_COUNTS']]
+    bureau_with_dpds = bureau_with_dpds[:][['SK_ID_CURR', *EXTRACTRED_BUREAU_COLUMNS]]
     
     # Further aggregation to make sure unique SK_ID_CURR are returned
     bureau_with_dpds = bureau_with_dpds.groupby(['SK_ID_CURR']).mean()
