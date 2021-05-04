@@ -1,6 +1,7 @@
 import io
 import zipfile
 import pandas as pd
+import numpy as np
 
 def extract_zip(content):
     with zipfile.ZipFile(io.BytesIO(content)) as thezip:
@@ -11,7 +12,7 @@ def extract_zip(content):
 def extract_features_from_bureau(bureau_df, bureau_balances_df):
     bureau_df['AMT_CREDIT_SUM_DEBT'] = bureau_df['AMT_CREDIT_SUM_DEBT'].fillna(value=0)
     bureau_df['AMT_CREDIT_DEBT_RATIO'] =  bureau_df['AMT_CREDIT_SUM_DEBT']/bureau_df['AMT_CREDIT_SUM']
-    bureau_df['AMT_CREDIT_DEBT_RATIO'] = bureau_df['AMT_CREDIT_DEBT_RATIO'].fillna(value=0)
+    bureau_df['AMT_CREDIT_DEBT_RATIO'] = bureau_df['AMT_CREDIT_DEBT_RATIO'].replace([np.inf, -np.inf, np.nan], 0)
 
     bureau_df = bureau_df.set_index('SK_ID_BUREAU')
     
