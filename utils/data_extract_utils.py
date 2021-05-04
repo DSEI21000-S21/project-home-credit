@@ -29,13 +29,16 @@ def extract_features_from_bureau(bureau_df, bureau_balances_df):
         '5': 5,
     }
     def sum_of_dpd(x):
-        sum = 0
-        for status in x['STATUS']:
-            sum += DPD_STATUS_MAP[status]
-        return sum
+        min_month_balance = -96
+        # Normalize by the min_month_balance, the further back the balance was the
+        # lest weight we give it
+        return np.sum(x['STATUS'].values * np.absolute((min_month_balance - x['MONTHS_BALANCE'].values)/min_month_balance))
 
-    dpd_counts_df = bureau_balances_df.groupby(['SK_ID_BUREAU']).apply(sum_of_dpd)
+    # Map statuses
+    dpd_counts_df = bureau_balances_df.replace({"STATUS": DPD_STATUS_MAP})
+    dpd_counts_df = dpd_counts_df.groupby(['SK_ID_BUREAU']).apply(sum_of_dpd)
     dpd_counts_df = pd.DataFrame(dpd_counts_df, columns=['DPD_COUNTS']);
+
     bureau_with_dpds = pd.concat([bureau_df, dpd_counts_df], axis=1)
     
     bureau_with_dpds = bureau_with_dpds[:][['SK_ID_CURR', *EXTRACTRED_BUREAU_COLUMNS]]
