@@ -44,3 +44,20 @@ def extract_features_from_bureau(bureau_df, bureau_balances_df):
     bureau_with_dpds = bureau_with_dpds.groupby(['SK_ID_CURR']).mean()
     
     return bureau_with_dpds.fillna(value=0)
+
+def get_clean_credit(df_credit_raw):
+    useful = ['MONTHS_BALANCE', 'AMT_BALANCE', 'AMT_CREDIT_LIMIT_ACTUAL',
+       'AMT_RECEIVABLE_PRINCIPAL', 'AMT_TOTAL_RECEIVABLE','NAME_CONTRACT_STATUS_Completed','SK_ID_CURR','SK_DPD','SK_DPD_DEF']
+        
+
+        
+    full_dummies = pd.get_dummies(df_credit_raw,columns = ['NAME_CONTRACT_STATUS'])
+    full_trimmed = full_dummies[useful]
+    dpd_counts_sum = full_trimmed.groupby(['SK_ID_CURR'])['SK_DPD'].sum().reset_index()
+    dpd_df_counts_sum = full_trimmed.groupby(['SK_ID_CURR'])['SK_DPD_DEF'].sum().reset_index()
+    full_trimmed['SK_DPD_SUM'] = dpd_counts_sum['SK_DPD']
+    full_trimmed['SK_DPD_DEF_SUM'] = dpd_df_counts_sum['SK_DPD_DEF']
+    
+    full_not_nan = full_trimmed.fillna(value=0)
+    
+    return full_not_nan.drop(columns=['SK_DPD','SK_DPD_DEF'])
