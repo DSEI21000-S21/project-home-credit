@@ -8,6 +8,8 @@ def extract_zip(content):
         for zipinfo in thezip.infolist():
             with thezip.open(zipinfo) as thefile:
                 yield zipinfo.filename, thefile
+
+EXTRACTRED_BUREAU_COLUMNS = ['AMT_CREDIT_DEBT_RATIO', 'CREDIT_DAY_OVERDUE', 'DPD_COUNTS']
                 
 def extract_features_from_bureau(bureau_df, bureau_balances_df):
     bureau_df['AMT_CREDIT_SUM_DEBT'] = bureau_df['AMT_CREDIT_SUM_DEBT'].fillna(value=0)
@@ -27,18 +29,38 @@ def extract_features_from_bureau(bureau_df, bureau_balances_df):
         '5': 5,
     }
     def sum_of_dpd(x):
-        sum = 0
-        for status in x['STATUS']:
-            sum += DPD_STATUS_MAP[status]
-        return sum
+        min_month_balance = -96
+        # Normalize by the min_month_balance, the further back the balance was the
+        # lest weight we give it
+        return np.sum(x['STATUS'].values * np.absolute((min_month_balance - x['MONTHS_BALANCE'].values)/min_month_balance))
 
-    dpd_counts_df = bureau_balances_df.groupby(['SK_ID_BUREAU']).apply(sum_of_dpd)
+    # Map statuses
+    dpd_counts_df = bureau_balances_df.replace({"STATUS": DPD_STATUS_MAP})
+    dpd_counts_df = dpd_counts_df.groupby(['SK_ID_BUREAU']).apply(sum_of_dpd)
     dpd_counts_df = pd.DataFrame(dpd_counts_df, columns=['DPD_COUNTS']);
+
     bureau_with_dpds = pd.concat([bureau_df, dpd_counts_df], axis=1)
     
-    bureau_with_dpds = bureau_with_dpds[:][['SK_ID_CURR', 'AMT_CREDIT_DEBT_RATIO', 'CREDIT_DAY_OVERDUE', 'DPD_COUNTS']]
+    bureau_with_dpds = bureau_with_dpds[:][['SK_ID_CURR', *EXTRACTRED_BUREAU_COLUMNS]]
     
     # Further aggregation to make sure unique SK_ID_CURR are returned
     bureau_with_dpds = bureau_with_dpds.groupby(['SK_ID_CURR']).mean()
     
     return bureau_with_dpds.fillna(value=0)
+
+def get_clean_credit(df_credit_raw):
+    useful = ['MONTHS_BALANCE', 'AMT_BALANCE', 'AMT_CREDIT_LIMIT_ACTUAL',
+       'AMT_RECEIVABLE_PRINCIPAL', 'AMT_TOTAL_RECEIVABLE','NAME_CONTRACT_STATUS_Completed','SK_ID_CURR','SK_DPD','SK_DPD_DEF']
+        
+
+        
+    full_dummies = pd.get_dummies(df_credit_raw,columns = ['NAME_CONTRACT_STATUS'])
+    full_trimmed = full_dummies[useful]
+    dpd_counts_sum = full_trimmed.groupby(['SK_ID_CURR'])['SK_DPD'].sum().reset_index()
+    dpd_df_counts_sum = full_trimmed.groupby(['SK_ID_CURR'])['SK_DPD_DEF'].sum().reset_index()
+    full_trimmed['SK_DPD_SUM'] = dpd_counts_sum['SK_DPD']
+    full_trimmed['SK_DPD_DEF_SUM'] = dpd_df_counts_sum['SK_DPD_DEF']
+    
+    full_not_nan = full_trimmed.fillna(value=0)
+    
+    return full_not_nan.drop(columns=['SK_DPD','SK_DPD_DEF'])
