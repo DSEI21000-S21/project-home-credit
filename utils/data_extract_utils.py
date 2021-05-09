@@ -2,12 +2,31 @@ import io
 import zipfile
 import pandas as pd
 import numpy as np
+import dropbox
 
 def extract_zip(content):
     with zipfile.ZipFile(io.BytesIO(content)) as thezip:
         for zipinfo in thezip.infolist():
             with thezip.open(zipinfo) as thefile:
                 yield zipinfo.filename, thefile
+         
+# Retrieve all CSVs from dropbox
+def get_home_credit_data():
+    # Connect to dropbox
+    dbx = dropbox.Dropbox('cHV7yAR0J6YAAAAAAAAAAVQ1NLCrOwerbaNltPWHslYXKuUTJ5_wfgJsuFcmx83o')
+    
+    # Download, and extract data from dropbox into memory. 
+    data = {}
+    for entry in dbx.files_list_folder('').entries:
+        response = dbx.files_download('/{}'.format(entry.name))
+
+        if 'zip' in entry.name:
+            content = extract_zip(response[1].content)
+
+            for file in content:
+                df = pd.read_csv(file[1])
+                data[entry.name.replace('.csv.zip', '')] = df
+    return data
 
 EXTRACTRED_BUREAU_COLUMNS = ['AMT_CREDIT_DEBT_RATIO', 'CREDIT_DAY_OVERDUE', 'DPD_COUNTS']
                 
@@ -47,6 +66,17 @@ def extract_features_from_bureau(bureau_df, bureau_balances_df):
     bureau_with_dpds = bureau_with_dpds.groupby(['SK_ID_CURR']).mean()
     
     return bureau_with_dpds.fillna(value=0)
+                
+def extract_features_from_installments_payments(installments_payments_df):
+    def mis_instalment_payment(x):
+        return np.mean(x['AMT_INSTALMENT'].values - x['AMT_PAYMENT'].values)
+
+    # Let's create mis_instalment_payment attributes
+    mis_instalment_payment = installments_payments_df.groupby('SK_ID_CURR').apply(mis_instalment_payment)
+    mis_instalment_payment_df = pd.DataFrame(mis_instalment_payment, columns=['MIS_INSTALMENT_PAYMENTS'])
+    mis_instalment_payment_df.fillna(value=0, inplace=True)
+    
+    return mis_instalment_payment_df
 
 def get_clean_credit(df_credit_raw):
     useful = ['MONTHS_BALANCE', 'AMT_BALANCE', 'AMT_CREDIT_LIMIT_ACTUAL',
