@@ -79,8 +79,7 @@ def extract_features_from_installments_payments(installments_payments_df):
     return mis_instalment_payment_df
 
 def get_clean_credit(df_credit_raw):
-    useful = ['MONTHS_BALANCE', 'AMT_BALANCE', 'AMT_CREDIT_LIMIT_ACTUAL',
-       'AMT_RECEIVABLE_PRINCIPAL', 'AMT_TOTAL_RECEIVABLE','NAME_CONTRACT_STATUS_Completed','SK_ID_CURR','SK_DPD','SK_DPD_DEF']
+    useful = ['MONTHS_BALANCE', 'AMT_BALANCE', 'AMT_CREDIT_LIMIT_ACTUAL','AMT_RECEIVABLE_PRINCIPAL', 'AMT_TOTAL_RECEIVABLE','NAME_CONTRACT_STATUS_Completed','SK_ID_CURR','SK_DPD','SK_DPD_DEF']
         
 
         
