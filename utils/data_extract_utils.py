@@ -94,3 +94,18 @@ def get_clean_credit(df_credit_raw):
     full_not_nan = full_trimmed.fillna(value=0)
     
     return full_not_nan.drop(columns=['SK_DPD','SK_DPD_DEF'])
+
+# Remove features that are highly correlated with each other for improving model simplicity
+def remove_highly_correlated_columns(df_orig, threshold):
+    df = df_orig.copy()
+    corr = df.corr()
+    col_corr = set()
+    for i in range(len(corr.columns)):
+        for j in range(i):
+            if (corr.iloc[i, j] >= threshold) and (corr.columns[j] not in col_corr):
+                column_name = corr.columns[i]
+                col_corr.add(column_name)
+                if column_name in df.columns:
+                    print('REMOVING {} which is correlated with {}'.format(column_name, corr.columns[j]))
+                    del df[column_name]
+    return df
